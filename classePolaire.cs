@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System.Globalization;
+using UnityEngine.UI;
 
 public class Polaire : MonoBehaviour
 {
-
     struct Valeur{
         public int Index;
         public bool Trouve;
@@ -17,31 +17,85 @@ public class Polaire : MonoBehaviour
         Angle,Vitesse
     };
 
-    public string path;
     double[,] tableau;
     double[] tabAngles;
     double[] tabWindSpeed;
-    // Start is called before the first frame update
+
+
+    
+    int selectedValue = 0;
+
+    public string path;
+
+
+    public Text lb;
+    public GameObject cube;
+    public GameObject beaume;
+    public GameObject mat;
+
+
+    public double localTwa;
+    public double localWindSpeed;
+    public double localBeta;
+
+
+    ~Polaire() { }
+
     void Start()
     {
         int lignes = TotalLines(path);
         int colonnes = TotalColonnes(path);
         initTableau(lignes,colonnes);
         printTableau(lignes,colonnes);
-        print(getMaxSpeed(31, 7));
+        print(getMaxSpeed(30.0001, 10.00001));
+        refreshValue();
     }
 
-    // Update is called once per frame
+    public Polaire(string path) => this.path = path;
+
     void Update()
     {
-        
+        if(Input.GetKey(KeyCode.UpArrow))
+        {
+            if (selectedValue == 0) localTwa += 0.1;
+            else if (selectedValue == 1) localWindSpeed += 0.1;
+            else localBeta += 0.1;
+            //refreshValue();
+        }
+        if(Input.GetKey(KeyCode.DownArrow))
+        {
+            if (selectedValue == 0) localTwa -= 0.1;
+            else if (selectedValue == 1) localWindSpeed -= 0.1;
+            else localBeta -= 0.1;
+            //refreshValue();
+        }
+        if (Input.GetKeyDown(KeyCode.RightArrow)) selectedValue = (selectedValue+1) % 3;
+        if (Input.GetKeyDown(KeyCode.LeftArrow)) selectedValue = (selectedValue + 2) % 3;
     }
 
-    double getMaxSpeed(double twa, double windSpeed)
+    public void initPolaire(string path)
+    {
+        this.path = path;
+        Start();
+    }
+    void refreshValue()
+    {
+        /*lb.text = "Valeur de TWA : " + localTwa + "\n Valeur de WINDSPEED : " + localWindSpeed + "\n Valeur de BETA : " + localBeta + "\n Valeur de BOATSPEED : " + getMaxSpeed(localTwa, localWindSpeed) + "\n Valeur de GITE : " + getMaxGite(localTwa,localBeta,localWindSpeed);
+        cube.transform.eulerAngles = new Vector3(0,0,(float)getMaxGite(localTwa,localBeta,localWindSpeed));
+        rotationBeaume();*/
+    }
+
+    void rotationBeaume()
+    {
+        mat.transform.Rotate(new Vector3(0, (float)localTwa - mat.transform.eulerAngles.y, 0));
+    }
+
+    public double getMaxSpeed(double twa, double windSpeed)
     {
         int IndexAngle = 0;
         int IndexWindSpeed = 0;
         double returnValue;
+        twa = Mathf.Abs((float)twa);
         Valeur closestAngle = getClosestValue(twa, AngleOuVitesse.Angle);
         Valeur closestWindSpeed = getClosestValue(windSpeed, AngleOuVitesse.Vitesse);
 
@@ -58,6 +112,7 @@ public class Polaire : MonoBehaviour
             double closeVal = tableau[IndexAngle, closestWindSpeed.Index]; // = T(x-1,y)
             double nextVal = tableau[IndexAngle ,closestWindSpeed.Index + 1]; // = T(x+1,y)
             returnValue = closeVal + (((nextVal - closeVal) / (tabWindSpeed[closestWindSpeed.Index + 1] - tabWindSpeed[closestWindSpeed.Index])) * (windSpeed - tabWindSpeed[closestWindSpeed.Index]));
+            
             return returnValue;
         }
         else if (closestWindSpeed.Trouve)
@@ -67,6 +122,7 @@ public class Polaire : MonoBehaviour
             double closeVal = tableau[closestAngle.Index, IndexWindSpeed]; // = T(x,y-1)
             double nextVal = tableau[closestAngle.Index + 1, IndexWindSpeed]; // = T(x,y+1)
             returnValue = closeVal + (((nextVal - closeVal) / (tabAngles[closestAngle.Index + 1] - tabAngles[closestAngle.Index])) * (twa - tabAngles[closestAngle.Index]));
+            
             return returnValue;
         }
         else
@@ -75,14 +131,20 @@ public class Polaire : MonoBehaviour
             double nextVal = tableau[closestAngle.Index + 1, closestWindSpeed.Index + 1];
             double nextValx = tableau[closestAngle.Index + 1, closestWindSpeed.Index];
             double nextValy = tableau[closestAngle.Index, closestWindSpeed.Index + 1];
-            returnValue = (closeVal + nextVal + nextValx + nextValy) / 4;
+            double value1 = closeVal + (((nextValy - closeVal) / (tabAngles[closestAngle.Index + 1] - tabAngles[closestAngle.Index])) * (twa - tabAngles[closestAngle.Index]));
+            double value2 = nextValx + (((nextVal - nextValx) / (tabAngles[closestAngle.Index + 1] - tabAngles[closestAngle.Index])) * (twa - tabAngles[closestAngle.Index]));
+            returnValue = value1 + (((value2 - value1) / (tabWindSpeed[closestWindSpeed.Index + 1] - tabWindSpeed[closestWindSpeed.Index])) * (windSpeed - tabWindSpeed[closestWindSpeed.Index]));
+
             return returnValue;
         }
-        //print(tableau[IndexAngle, IndexWindSpeed]);
     }
-    double getMaxGite(double twa, double windSpeed)
+
+    public double getMaxGite(double twa,double beta, double windSpeed)
     {
-        return 0.0;
+        double inclinaisonMax = 25;
+        double trueWindSpeedMax = 50;
+        double pourcInclinaison = inclinaisonMax * (windSpeed/trueWindSpeedMax) * Mathf.Sin((float)((Mathf.PI/180) * twa));
+        return pourcInclinaison;
     }
 
     private int TotalLines(string path)
