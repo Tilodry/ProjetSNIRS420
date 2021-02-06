@@ -50,46 +50,15 @@ public class Polaire : MonoBehaviour
         RefreshValue();
     }
 
-    public Polaire(string path) => this.path = path;
+    public Polaire(string path) => this.path = path; // Constructeur
 
-    void Update()
-    {
-        if (Input.GetKey(KeyCode.UpArrow))
-        {
-            if (selectedValue == 0) localTwa += 0.1;
-            else if (selectedValue == 1) localWindSpeed += 0.1;
-            else localBeta += 0.1;
-            RefreshValue();
-        }
-        if (Input.GetKey(KeyCode.DownArrow))
-        {
-            if (selectedValue == 0) localTwa -= 0.1;
-            else if (selectedValue == 1) localWindSpeed -= 0.1;
-            else localBeta -= 0.1;
-            RefreshValue();
-        }
-        if (Input.GetKeyDown(KeyCode.RightArrow)) selectedValue = (selectedValue + 1) % 3;
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) selectedValue = (selectedValue + 2) % 3;
-    }
-
-    public void InitPolaire(string path)
+    public void InitPolaire(string path) // Permet de forcer l'initialisation de la polaire avec le chemin d'accès au fichier .pol
     {
         this.path = path;
         Start();
     }
-    void RefreshValue()
-    {
-        lb.text = "Valeur de TWA : " + localTwa + "\n Valeur de WINDSPEED : " + localWindSpeed + "\n Valeur de BETA : " + localBeta + "\n Valeur de BOATSPEED : " + GetMaxSpeed(localTwa, localWindSpeed) + "\n Valeur de GITE : " + GetMaxGite(localTwa, localBeta, localWindSpeed);
-        cube.transform.eulerAngles = new Vector3(0, 0, (float)GetMaxGite(localTwa, localBeta, localWindSpeed));
-        RotationBeaume();
-    }
 
-    void RotationBeaume()
-    {
-        mat.transform.Rotate(new Vector3(0, (float)localTwa - mat.transform.eulerAngles.y, 0));
-    }
-
-    public double GetMaxSpeed(double twa, double windSpeed)
+    public double GetMaxSpeed(double twa, double windSpeed) // Renvoie la vitesse maximale du bateau en cas de condition optimale de navigation en fonction de l'angle de la voile et la vitesse du vent
     {
         int IndexAngle = 0;
         int IndexWindSpeed = 0;
@@ -138,7 +107,7 @@ public class Polaire : MonoBehaviour
         }
     }
 
-    public double GetMaxGite(double twa, double beta, double windSpeed)
+    public double GetMaxGite(double twa, double beta, double windSpeed) // Fourni l'angle de Gite maximal par rapport aux valeurs de vitesse du vent et de l'angle 
     {
         double inclinaisonMax = 25;
         double trueWindSpeedMax = 50;
@@ -146,7 +115,7 @@ public class Polaire : MonoBehaviour
         return pourcInclinaison;
     }
 
-    private int TotalLines(string path)
+    private int TotalLines(string path) // Retourne le nombre total de lignes du fichier .pol chargé
     {
         using (StreamReader r = new StreamReader(path))
         {
@@ -156,7 +125,7 @@ public class Polaire : MonoBehaviour
         }
     }
 
-    private int TotalColonnes(string path)
+    private int TotalColonnes(string path) // Retourne le nombre total de colonnes du fichier .pol chargé
     {
         using (StreamReader r = new StreamReader(path))
         {
@@ -174,7 +143,7 @@ public class Polaire : MonoBehaviour
         }
     }
 
-    void InitTableau(int lignes, int colonnes)
+    void InitTableau(int lignes, int colonnes) // Initialise le tableau local a partir des données contenues dans le fichier .pol chargé
     {
         tableau = new double[lignes, colonnes];
         tabAngles = new double[lignes];
@@ -204,21 +173,8 @@ public class Polaire : MonoBehaviour
         }
     }
 
-    void PrintTableau(int lignes, int colonnes)
-    {
-        string sortie = "";
-        for (int i = 0; i < lignes; i++)
-        {
-            for (int j = 0; j < colonnes; j++)
-            {
-                sortie += "\t" + tableau[i, j];
-            }
-            print(sortie);
-            sortie = "";
-        }
-    }
 
-    Valeur GetClosestValue(double vCherche, AngleOuVitesse w)
+    Valeur GetClosestValue(double vCherche, AngleOuVitesse w) // Récupère la valeur contenue dans le tableau la plus proche de celle demandée
     {
         Valeur retour;
         retour.Index = 0;
@@ -244,4 +200,52 @@ public class Polaire : MonoBehaviour
         }
         return retour;
     }
+
+	void Update() // Pour DEBUG
+    {
+        if (Input.GetKey(KeyCode.UpArrow)) // Change la valeur du champ sélectionné
+        {
+            if (selectedValue == 0) localTwa += 0.1;
+            else if (selectedValue == 1) localWindSpeed += 0.1;
+            else localBeta += 0.1;
+            RefreshValue();
+        }
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            if (selectedValue == 0) localTwa -= 0.1;
+            else if (selectedValue == 1) localWindSpeed -= 0.1;
+            else localBeta -= 0.1;
+            RefreshValue();
+        }
+        if (Input.GetKeyDown(KeyCode.RightArrow)) selectedValue = (selectedValue + 1) % 3; // Change le champs sélectionné
+        if (Input.GetKeyDown(KeyCode.LeftArrow)) selectedValue = (selectedValue + 2) % 3;
+    }
+
+    void RefreshValue() // Pour DEBUG, permet d'afficher les valeurs des différents champs possibles
+    {
+        lb.text = "Valeur de TWA : " + localTwa + "\n Valeur de WINDSPEED : " + localWindSpeed + "\n Valeur de BETA : " + localBeta + "\n Valeur de BOATSPEED : " + GetMaxSpeed(localTwa, localWindSpeed) + "\n Valeur de GITE : " + GetMaxGite(localTwa, localBeta, localWindSpeed);
+        cube.transform.eulerAngles = new Vector3(0, 0, (float)GetMaxGite(localTwa, localBeta, localWindSpeed));
+        RotationBeaume();
+    }
+
+	void PrintTableau(int lignes, int colonnes) // Pour DEBUG, affiche le contenu du tableau
+    {
+        string sortie = "";
+        for (int i = 0; i < lignes; i++)
+        {
+            for (int j = 0; j < colonnes; j++)
+            {
+                sortie += "\t" + tableau[i, j];
+            }
+            print(sortie);
+            sortie = "";
+        }
+    }
+
+	void RotationBeaume() // Pour DEBUG, permet de réinitialiser l'angle du beaume
+    {
+        mat.transform.Rotate(new Vector3(0, (float)localTwa - mat.transform.eulerAngles.y, 0));
+    }
 }
+
+
